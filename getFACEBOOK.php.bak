@@ -1,0 +1,65 @@
+#!/usr/bin/php
+<?php
+
+
+// Skip these two lines if you're using Composer
+define('FACEBOOK_SDK_V4_SRC_DIR', 'src/Facebook/');
+require ('autoload.php');
+
+use Facebook\FacebookSession;
+use Facebook\FacebookRequest;
+use Facebook\GraphUser;
+use Facebook\FacebookRequestException;
+use Facebook\FacebookRedirectLoginHelper;
+
+FacebookSession::setDefaultApplication('1542491329337866','49fe3579adbe0082b9291d97e0ac5bee');
+
+// Use one of the helper classes to get a FacebookSession object.
+//   FacebookRedirectLoginHelper
+//   FacebookCanvasLoginHelper
+//   FacebookJavaScriptLoginHelper
+// or create a FacebookSession with a valid access token:
+//$helper = new FacebookRedirectLoginHelper();
+$accessToken = "CAAV64zZCBGgoBAAow7FldqJ23v9n2kfm5ZA0elAJlda8vqZAvNWTjwabyfrnlS26msFfmzXiZBXLTKZBWEWJmaKu5sKSAWsTHdlIdztulAqOFkgRzaO7L0djiOMPcqbbxk7UN1GrmmoOskp3Phiawo9cINtEACrAdEgwSEvx8BOFm4NXxZBJzQlRppuZCBv0WYnIyBMOpy1FzwJAI5DhgVo";
+
+$session = new FacebookSession( $accessToken );
+
+
+// see if we have a session
+//if ( isset( $session ) ) {
+
+$URL = '/johnsonlightshow';
+	// graph api request for public post data
+	//$response = (new FacebookRequest( $session, 'GET', '/2169877918817?metadata=1') )->execute()->getGraphObject()->asArray();
+	$request = new FacebookRequest(
+			$session,
+			'GET',
+			$URL
+
+	);
+	$response = $request->execute();
+	$graphObject = $response->getGraphObject();
+	$fbarray = $graphObject->asArray();
+	
+	echo "user: ".$USER."\n";
+	// print data
+	echo '<pre>' . print_r( $fbarray, 1 ) . '</pre>';
+	
+	//number of lines for latest post...
+	
+	//id =10204056386742286;
+
+	$status_count = count($fbarray['data']);
+	
+	//echo "status count: ".$status_count."\n";
+	
+	//echo " id of latest status: ".$fbarray['data'][0]->id."\n";
+	
+	$like_count =0;
+	
+	//echo "count of likes: ".count($fbarray['data'][0]->likes->data)."\n";
+	
+	$mainLikes = $fbarray['likes'];
+	echo "Main like count: ".$mainLikes."\n";
+	
+
