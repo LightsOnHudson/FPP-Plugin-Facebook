@@ -126,10 +126,6 @@ if($METADATA) {
 
 $newMessages = array();
 
-//$URL .= "?metadata=1";
-//$URL = "/742926142453427/statuses?access_token=".$accessToken;  //938883646129465%7CJsYHSQGa7jQsvwv0vgb4bEJaCfg
-	// graph api request for public post data
-	//$response = (new FacebookRequest( $session, 'GET', '/2169877918817?metadata=1') )->execute()->getGraphObject()->asArray();
 	$request = new FacebookRequest(
 			$session,
 			'GET',
@@ -226,11 +222,7 @@ $newMessages = array();
 	if($METADATA) {
 		$URL .= "?metadata=1";
 	}
-	//$URL .= "?metadata=1";
-	//$URL = "/742926142453427/statuses?access_token=".$accessToken;  //938883646129465%7CJsYHSQGa7jQsvwv0vgb4bEJaCfg
-	// graph api request for public post data
-	//$response = (new FacebookRequest( $session, 'GET', '/2169877918817?metadata=1') )->execute()->getGraphObject()->asArray();
-	$request = new FacebookRequest(
+		$request = new FacebookRequest(
 			$session,
 			'GET',
 			$URL
