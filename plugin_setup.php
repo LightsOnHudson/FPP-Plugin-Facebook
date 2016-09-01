@@ -1,8 +1,9 @@
 <?php
 
 //$DEBUG=true;
-
 include_once "/opt/fpp/www/common.php";
+include_once 'functions.inc.php';
+include_once 'commonFunctions.inc.php';
 include_once "functions.inc.php";
 
 
@@ -14,16 +15,19 @@ $logFile = $settings['logDirectory']."/".$pluginName.".log";
 
 if(isset($_POST['submit']))
 {
-	$SPORTS =  implode(',', $_POST["SPORTS"]);
+	
 
 //	echo "Writring config fie <br/> \n";
 	
 	
-	WriteSettingToFile("ENABLED",urlencode($_POST["ENABLED"]),$pluginName);
+	//WriteSettingToFile("ENABLED",urlencode($_POST["ENABLED"]),$pluginName);
 	WriteSettingToFile("SEPARATOR",urlencode($_POST["SEPARATOR"]),$pluginName);
 	WriteSettingToFile("USER",urlencode($_POST["USER"]),$pluginName);
 	WriteSettingToFile("APP_ID",urlencode($_POST["APP_ID"]),$pluginName);
 	WriteSettingToFile("APP_SECRET",urlencode($_POST["APP_SECRET"]),$pluginName);
+	
+	WriteSettingToFile("ACCESS_TOKEN",urlencode($_POST["ACCESS_TOKEN"]),$pluginName);
+	
 	//WriteSettingToFile("LIKE_COUNT",$_POST["LIKE_COUNT"],$pluginName);
 	WriteSettingToFile("FACEBOOK_LAST",$_POST["FACEBOOK_LAST"],$pluginName);
 	
@@ -41,6 +45,9 @@ if(isset($_POST['submit']))
 	$USER = urldecode(ReadSettingFromFile("USER",$pluginName));
 	$APP_ID = urldecode(ReadSettingFromFile("APP_ID",$pluginName));
 	$APP_SECRET = urldecode(ReadSettingFromFile("APP_SECRET",$pluginName));
+	
+	$ACCESS_TOKEN = urldecode(ReadSettingFromFile("ACCESS_TOKEN",$pluginName));
+	
 	$LIKES = ReadSettingFromFile("LIKE_COUNT",$pluginName);
 	
 //	echo "LIKE: COUNT: ".$LIKES."<br/> \n";
@@ -66,6 +73,13 @@ if(isset($_POST['submit']))
 	if((int)$FACEBOOK_LAST_INDEX == 0 || $FACEBOOK_LAST_INDEX == "") {
 		$FACEBOOK_LAST_INDEX=0;
 	}
+	
+	$gitURL = "https://github.com/LightsOnHudson/FPP-Plugin-Facebook.git";
+	
+	$pluginUpdateFile = $settings['pluginDirectory']."/".$pluginName."/"."pluginUpdate.inc";
+	
+	logEntry("Plugin update file: ".$pluginUpdateFile);
+	
 ?>
 
 <html>
@@ -107,12 +121,12 @@ $reboot=0;
 
 echo "ENABLE PLUGIN: ";
 
-if($ENABLED== 1 || $ENABLED == "on") {
-		echo "<input type=\"checkbox\" checked name=\"ENABLED\"> \n";
-//PrintSettingCheckbox("Radio Station", "ENABLED", $restart = 0, $reboot = 0, "ON", "OFF", $pluginName = $pluginName, $callbackName = "");
-	} else {
-		echo "<input type=\"checkbox\"  name=\"ENABLED\"> \n";
-}
+//if($ENABLED== 1 || $ENABLED == "on") {
+//		echo "<input type=\"checkbox\" checked name=\"ENABLED\"> \n";
+PrintSettingCheckbox("Facebook Plugin", "ENABLED", $restart = 0, $reboot = 0, "ON", "OFF", $pluginName = $pluginName, $callbackName = "");
+//	} else {
+//		echo "<input type=\"checkbox\"  name=\"ENABLED\"> \n";
+//}
 
 echo "<p/> \n";
 
@@ -148,15 +162,24 @@ if($DEBUG) {
 	
 	echo "<input type=\"text\" name=\"APP_SECRET\" size=\"64\" value=\"".$APP_SECRET."\"> \n";
 	
+	echo "<p/> \n";
 	
+	echo "Access Token from FB Dev Site: \n";
+	
+	echo "<input type=\"text\" name=\"ACCESS_TOKEN\" size=\"64\" value=\"".$ACCESS_TOKEN."\"> \n";
 	
 
 ?>
 <p/>
 <input id="submit_button" name="submit" type="submit" class="buttons" value="Save Config">
-
+<?
+ if(file_exists($pluginUpdateFile))
+ {
+ 	//echo "updating plugin included";
+	include $pluginUpdateFile;
+}
+?>
 </form>
-
 
 <p>To report a bug, please file it against the sms Control plugin project on Git: https://github.com/LightsOnHudson/FPP-Plugin-Facebook
 

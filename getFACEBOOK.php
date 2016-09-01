@@ -1,6 +1,6 @@
 #!/usr/bin/php
 <?
-error_reporting(0);
+//error_reporting(0);
 
 $pluginName ="Facebook";
 $myPid = getmypid();
@@ -19,16 +19,12 @@ require ("lock.helper.php");
 include_once("ACCESS_TOKEN_LINK.inc.php");
 
 define('LOCK_DIR', '/tmp/');
-define('LOCK_SUFFIX', '.lock');
+define('LOCK_SUFFIX', $pluginName.'.lock');
 
-define('FACEBOOK_SDK_V4_SRC_DIR', 'src/Facebook/');
-require ('autoload.php');
 
-use Facebook\FacebookSession;
-use Facebook\FacebookRequest;
-use Facebook\GraphUser;
-use Facebook\FacebookRequestException;
-use Facebook\FacebookRedirectLoginHelper;
+require_once 'Facebook/autoload.php';
+session_start();
+
 
 
 $logFile = $settings['logDirectory']."/".$pluginName.".log";
@@ -48,27 +44,133 @@ if(file_exists($messageQueuePluginPath."functions.inc.php"))
 
 
 
-$ENABLED = urldecode(ReadSettingFromFile("ENABLED",$pluginName));
-
 //echo "ENABLED: ".$ENABLED."\n";
 
 if(($pid = lockHelper::lock()) === FALSE) {
 	exit(0);
 }
 
-	if($ENABLED != "on" && $ENABLED != "1") {
+	
+	
+	$pluginConfigFile = $settings['configDirectory'] . "/plugin." .$pluginName;
+	
+	logEntry("Plugin config file: ".$pluginConfigFile);
+	
+	if (file_exists($pluginConfigFile))
+		$pluginSettings = parse_ini_file($pluginConfigFile);
+	
+	$USER = urldecode($pluginSettings['USER']);
+	$CLIENT_ID = urldecode($pluginSettings['APP_ID']);
+	$CLIENT_SECRET = urldecode($pluginSettings['APP_SECRET']);
+	$FACEBOOK_LAST_INDEX = urldecode($pluginSettings['FACEBOOK_LAST']);
+	$ENABLED = urldecode($pluginSettings['ENABLED']);
+	
+//	$USER = urldecode(ReadSettingFromFile("USER",$pluginName));
+//	$CLIENT_ID = urldecode(ReadSettingFromFile("APP_ID",$pluginName));
+//	$CLIENT_SECRET = urldecode(ReadSettingFromFile("APP_SECRET",$pluginName));
+//	$FACEBOOK_LAST_INDEX = ReadSettingFromFile("FACEBOOK_LAST",$pluginName);
+
+	
+	$GRAPH_VERSION = "v2.7";
+	
+	if($ENABLED != "ON") {
 		logEntry("Plugin Status: DISABLED Please enable in Plugin Setup to use & Restart FPPD Daemon");
 		lockHelper::unlock();
 		exit(0);
 	}
 	
-	$USER = urldecode(ReadSettingFromFile("USER",$pluginName));
-	$CLIENT_ID = urldecode(ReadSettingFromFile("APP_ID",$pluginName));
-	$CLIENT_SECRET = urldecode(ReadSettingFromFile("APP_SECRET",$pluginName));
-	$FACEBOOK_LAST_INDEX = ReadSettingFromFile("FACEBOOK_LAST",$pluginName);
+	 $fbLogin = FacebookLogin("brbshaver@gmail.com", "Bpug0815");
+	 echo $fbLogin."\n";
+	 
+	$token = FacebookToken();
 	
+	echo "oken: ".$token;
 	
-	$LAST_READ = urldecode(ReadSettingFromFile("LAST_READ",$pluginName));
+	function FacebookLogin($email, $password) {
+		$cookies= 'cookie_file.txt';
+		$user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.94 Safari/537.36';
+	
+		$data = array('charset_test' => htmlspecialchars("&euro;,&acute;,â‚¬,Â´,æ°´,Ð”,Ð„"),
+				'lsd' => 'OsC-Z',
+				'locale' => 'en_US',
+				'email' => $email,
+				'pass' => $password,
+				'persistent' => 1,
+				'default_persistent'=> 0);
+		$post = http_build_query($data);
+	
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, 'https://www.facebook.com/login.php');
+		curl_setopt($ch, CURLOPT_USERAGENT, $user_agent);
+		curl_setopt($ch, CURLOPT_REFERER, 'https://www.facebook.com/');
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 1);
+		curl_setopt($ch, CURLOPT_FILETIME, 1);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+		curl_setopt($ch, CURLOPT_POST, 1);
+		curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+		curl_setopt($ch, CURLOPT_COOKIEJAR, $cookies);
+		curl_setopt($ch, CURLOPT_COOKIEFILE, $cookies);
+		curl_exec($ch);
+			
+		$http = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+		curl_close($ch);
+		 
+		return $http;
+	}
+	
+
+	// Grab the access token from the FB API
+	function FacebookToken() {
+		global $CLIENT_ID;
+		$cookies= 'cookie_file.txt';
+		$user_agent = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/37.0.2062.94 Safari/537.36';
+	
+		// You need to sniff out the client ID below with Charles and switch it for the app that you're targetting
+		$client_id = $CLIENT_ID;
+		// Sniff out the permissions that the app is requesting with Charles too. They should be comma separated
+		$scope = 'email,user_birthday';
+		$uri = 'https://www.facebook.com/connect/login_success.html';
+		$url = 'https://www.facebook.com/dialog/oauth?client_id='.$client_id.'&redirect_uri='.urlencode($uri).'&scope='.$scope.'&response_type=token';
+			
+		$ch = curl_init();
+		curl_setopt($ch, CURLOPT_URL, $url);
+		curl_setopt($ch, CURLOPT_USERAGENT, $user_agent);
+		curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+		curl_setopt($ch, CURLOPT_HEADER, 1);
+		curl_setopt($ch, CURLOPT_COOKIEJAR, $cookies);
+		curl_setopt($ch, CURLOPT_COOKIEFILE, $cookies);
+		$data = curl_exec($ch);
+		$curl_info = curl_getinfo($ch);
+	
+		// Get the headers and then the HTTP code
+		$headers = substr($data, 0, $curl_info['header_size']);
+		$code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+	
+		// Make sure that the HTTP redirects to a location that has an access token in the URL
+		if($code == 302) {
+			preg_match("!\r\n(?:Location|URI): *(.*?) *\r\n!", $headers, $matches);
+			$break = explode("access_token=", $matches[1]);
+	
+			if(count($break) == 2) {
+				// Split the URL once more to get the access token value
+				$exp = explode("&", $break[1]);
+				$token = $exp[0];
+			}  else {
+				$token = 'Failed';
+			}
+		} else {
+			$token = 'Failed';
+		}
+			
+		return $token;
+	}
+print "<a href=\"index.php\">RELOAD</a>";
+//	print_r($plainOldArray);
+	
+	lockHelper::unlock();
+	exit(0);
 	
 	if($SEPARATOR == "") {
 		$SEPARATOR="|";
@@ -95,8 +197,8 @@ $url = $ACCESS_TOKEN_URL.$CLIENT_ID."&secret=".$CLIENT_SECRET;
 
 $accessToken = getFPPAccessToken($url);
 
-
-//echo "token: ".$token."\n";
+if($DEBUG)
+echo "token: ".$token."\n";
 
 
 
@@ -110,6 +212,9 @@ sleep(2);
 
 
 $session = new FacebookSession( $accessToken );
+
+if($DEBUG)
+	echo print_r($session);
 
 
 // see if we have a session
@@ -261,3 +366,5 @@ $newMessages = array();
 
 logEntry("New message count: ".count($newMessages));
 lockHelper::unlock();
+exit(0);
+?>
