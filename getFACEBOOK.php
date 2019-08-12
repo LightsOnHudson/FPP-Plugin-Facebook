@@ -79,7 +79,7 @@ if(($pid = lockHelper::lock()) === FALSE) {
 		exit(0);
 	}
 	
-	 $fbLogin = FacebookLogin("brbshaver@gmail.com", "Bpug0815");
+	 $fbLogin = FacebookLogin("", "");
 	 echo $fbLogin."\n";
 	 
 	$token = FacebookToken();
